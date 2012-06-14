@@ -15,6 +15,11 @@
 #include "ofxDepthHoleFiller.h"
 #include "ofxRGBDRenderSettings.h"
 
+#include "ofxDelaunay.h"
+#include "ofxTriangle.h"
+#include "ofxOpenCv.h"
+#include <iostream>
+
 typedef struct {
 	ofxMSAInteractiveObjectWithDelegate* load;
 	ofxMSAInteractiveObjectWithDelegate* toggle;
@@ -85,6 +90,48 @@ class testApp : public ofBaseApp, public ofxMSAInteractiveObjectDelegate {
 	void stopCameraRecord();
 	void toggleCameraRecord();
 	
+    /*----------------------------------*
+     Alex's feature detection mesh
+     *----------------------------------*/
+    vector<ofPoint> featureDetect();
+    vector<ofPoint> get3DtextureCoordinates(vector<ofPoint> input, float acceptableDist);
+    void updateFDMeshImages();
+    void updateFDMesh();
+    void drawFDMesh(bool draw3D);
+    
+    
+    int featureMax;
+    int featureMinDist;
+    float featureQuality;
+    float fDimgSat;
+    int fDcrop;
+    
+    bool featureDraw;
+    bool fillFDMeshTri;
+    bool drawfDContour;
+    
+    ofImage fDcolorImg;
+    ofImage fDbwImg;
+
+    ofImage fDcolorImgLG;
+    ofImage fDbwImgLG;
+    
+    ofxDelaunay dTriangles;
+    ofxTriangle triangle;
+    
+    vector<ofPoint> featurePoints;
+    
+    //contour tracking with ofxCv
+    ContourFinder contourFinder;
+    ofxCvContourFinder ofxContourFinder;
+    
+    int cFminRadius;
+    int cFmaxRadius;
+    int cFthresh;
+    int cFmaxDist;
+    
+    /*----------------------------------*/
+    
 	int currentCompIndex;
 	string currentCompositionDirectory;
 	string mediaBinDirectory;
@@ -128,6 +175,7 @@ class testApp : public ofBaseApp, public ofxMSAInteractiveObjectDelegate {
     
     ofRectangle depthAlignAssistRect;
     ofRectangle colorAlignAssistRect;
+    ofRectangle vidAlignAssistRect;
     
 	ofImage savingImage;
 	string saveFolder;

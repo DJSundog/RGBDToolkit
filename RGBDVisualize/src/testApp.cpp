@@ -37,6 +37,10 @@ void testApp::setup(){
 	enableVideoInOut = false;
 	
 //	currentZFuzz = 0;
+    
+    /*----------------------------------*
+     Set Default Values for GUI variables here
+     *----------------------------------*/
     selfOcclude = false;
     
 	hiResPlayer = NULL;
@@ -69,6 +73,52 @@ void testApp::setup(){
 	shouldExportSettings = false;
     rendererDirty = true;
     
+    /*----------------------------------*
+     Feature Detection Variables 
+     
+     featureDraw :   toggle on and off to draw 
+                     the detected points on the img
+     featureMax :    number of points you would like
+                     returned
+     featureQuality: slide between .02 and .001, determines
+                     how "interesting" potential points 
+                     should be.
+     featureMinDist: minimum distance between points
+     
+     *----------------------------------*/
+    featureDraw = false;
+    fillFDMeshTri = true;
+    drawfDContour = false;
+    
+    featureMax = 1500;
+    featureQuality = 0.001;
+    featureMinDist = 4;
+    fDimgSat = 30;
+    
+    fDcrop = 20;
+    
+    dTriangles.setMaxPoints(featureMax);
+    
+    cFminRadius = 70;
+    cFmaxRadius = 500;
+    cFthresh = 36;
+    cFmaxDist = 80;
+    
+    //countourFinder setup, copied from ContoursTrackingExample
+    //from ofCv by kylemcdonald
+    
+    contourFinder.setMinAreaRadius(cFminRadius);
+	contourFinder.setMaxAreaRadius(cFmaxRadius);
+	contourFinder.setThreshold(cFthresh);
+	// wait for half a frame before forgetting something
+	contourFinder.getTracker().setPersistence(15);
+	// an object can move up to 32 pixels per frame
+	contourFinder.getTracker().setMaximumDistance(cFmaxDist);
+    
+    /*----------------------------------*/
+    
+    
+    //Allocate and initialize FBOs 
     //TODO set through interface
     int fboWidth  = 1920;
     int fboHeight = 1080;
@@ -125,6 +175,19 @@ void testApp::setup(){
     
 	loadCompositions();
 
+    /*----------------------------------*
+     Gui Features
+     
+     Add new pages of sliders and toggles here
+     
+     Remeber to initialize variables above, and
+     set a hot key in the keyPressed() function 
+     for the user.
+     
+     TODO:: some sort of visual guide to
+            what the hot keys do on the
+            main page
+    *----------------------------------*/
 	gui.addToggle("Pause Render", pauseRender);
 	gui.addToggle("Draw Pointcloud", drawPointcloud);
 	gui.addToggle("Draw Wireframe", drawWireframe);
@@ -163,6 +226,20 @@ void testApp::setup(){
 	gui.addToggle("View Comps", viewComps);
 	gui.addToggle("Render Batch", startRenderMode);
 	gui.addToggle("Export Settings", shouldExportSettings);
+    
+    gui.addPage("Feature Detection");
+    gui.addToggle("Draw Abstrated Mesh", featureDraw);
+    gui.addToggle("Hide Triangulization", fillFDMeshTri);
+    gui.addToggle("Draw Contour Finder", drawfDContour);
+    gui.addSlider("maxFeatures", featureMax, 1, 1000);
+    gui.addSlider("qualityLevel", featureQuality, 0.02, 0.001);
+    gui.addSlider("Minimum Point Distance", featureMinDist, 1, 16);
+    gui.addSlider("Color Saturation", fDimgSat, 0, 100);
+    gui.addSlider("Crop", fDcrop,0,100);
+    gui.addSlider("Contour Finder min Object Radius", cFminRadius, 1, cFmaxRadius);
+    gui.addSlider("Contour Finder max Object Radius", cFmaxRadius, cFminRadius, 1000);
+    gui.addSlider("Contour Finder threshold", cFthresh, 15, 400);
+    gui.addSlider("Contour Finder max Distance", cFmaxDist, 0,500);
     
 	gui.loadFromXML();
 	gui.toggleDraw();
@@ -243,7 +320,16 @@ void testApp::populateTimelineElements(){
 }
 
 #pragma mark customization
-//--------------------------------------------------------------
+
+/*------------------------------------------------------------*
+ ProcessDepthFrame
+ 
+ CUSTOMIZE :: Manipulate the raw Kinect Data here.
+ 
+ depthPixelDecodeBuffer contains the raw depth image. 
+ currently only being used to add noise to the connect data
+ 
+ *------------------------------------------------------------*/
 void testApp::processDepthFrame(){
 	
     if(!drawDepthDistortion) return;
@@ -264,14 +350,7 @@ void testApp::processDepthFrame(){
 
 	for(int y = 0; y <	480; y++){
 		for(int x = 0; x < 640; x++){
-			int index = y*640+x;
-            
-			//***************************************************
-			//CUSTOMIZATION: YOU CAN PROCESS YOUR RAW DEPTH FRAME HERE
-			//* 
-			//* depthPixelDecodeBuffer contains the raw depth image
-			//*
-			//***************************************************			
+			int index = y*640+x;		
             if(noise > 0){
                 //holeFilledPixels.getPixels()[index] += ofRandom(noise);   
                 depthSequence.currentDepthRaw.getPixels()[index] += ofRandom(noise);  
@@ -288,25 +367,38 @@ void testApp::processDepthFrame(){
     
 }
 
-void testApp::processGeometry(){
-	//***************************************************
-	//CUSTOMIZATION: YOU CAN MANIPULATE YOUR MESH HERE
-	//*
-	//* renderer.getMesh() contains mesh with indeces and texture coordinates 
-	//*
-	//***************************************************
-    if(!drawGeometryDistortion) return;
+/*------------------------------------------------------------*
+ Process the Mesh
+ 
+ CUSTOMIZE :: Manipulate the mesh indicies/texture coords here
+ 
+ renderer.getMesh() contains mesh with indeces and texture coordinates 
 
+ A | okay, so this thing doesn't actually contain texture coordinates,
+   | unless you flip the calculateTextureCoordinates boolean which
+   | DEVASTATES your framerate. However, the vector containing the
+   | verticies are indexed by the depth image cordinate 
+   | so [y*w + x ] and contain a 
+   | vec3f( xProjected, yProjected, zKinectCoordinate)
+ 
+ Also keep in mind that not all indicies in the vectors in 
+ renderer.getMesh() [which is a 640x480 1 dimensional vector]
+ are filled with valid data (most are 0,0,0), since only the
+ verticies that correspond to the kinect data grid are filled.
+*------------------------------------------------------------*/
+
+void testApp::processGeometry(){
+
+    if(!drawGeometryDistortion) return;
+    
+    float contract = 0; //timeline.getKeyframeValue("Contract");
+    float explode = 0; //timeline.getKeyframeValue("Explode");
     
     float perlinAmp = timeline.getKeyframeValue("Perlin Amp");
     float perlinDensity = timeline.getKeyframeValue("Perlin Density");
     float perlinSpeed = timeline.getKeyframeValue("Perlin Speed");
     perlinSpeed *= perlinSpeed;
-//    float contract = timeline.getKeyframeValue("Contract");
-//    float explode = timeline.getKeyframeValue("Explode");
-    float contract = 0; //timeline.getKeyframeValue("Contract");
-    float explode = 0; //timeline.getKeyframeValue("Explode");
-    
+
     accumulatedPerlinOffset += perlinSpeed;
     
     ofVec3f center(0,0,0);
@@ -323,7 +415,6 @@ void testApp::processGeometry(){
                                                            ofSignedNoise(vert.y/perlinDensity, vert.z/perlinDensity, vert.x/perlinDensity, accumulatedPerlinOffset)*perlinAmp );
         }
         
-        //vert.interpolate(center, contract);
         if(explode != 0){
             vert += (vert - center).normalize() * explode;
         }
@@ -333,6 +424,257 @@ void testApp::processGeometry(){
 //		renderer.getMesh().getVertices()[i].z += sin(i/30.0 + timeline.getCurrentFrame())*25;
 //	}
 	
+}
+
+/*------------------------------------------------------------*
+ FEATURE DETECTION
+ 
+ Runs ofxCv Feature Detection on the current video frame. 
+ Returns a Vector of interesting feature points on the image.
+ 
+ notes::
+ 
+ lowResPlayer->getTextureReference()
+    -returns pointer to texture
+     containing current frame.
+*------------------------------------------------------------*/
+
+vector<ofPoint> testApp::featureDetect(){
+
+    std::vector<cv::Point2f> points;
+    points.clear();
+    
+    //feature detect works on B/W IMAGE ONLY.
+    goodFeaturesToTrack(ofxCv::toCv(fDbwImg), points, featureMax, (double)featureQuality, (double)featureMinDist);
+  //  return ofxCv::toOf(harrisPoints).getVertices();
+    return ofxCv::toOf(points).getVertices();
+}
+
+/*------------------------------------------------------------*
+  Get 3D Texture Coordinates
+ 
+  input: vector of ofPoints chosen from the currentFrame, 
+         falloff distance for point matching (e.g., this point is a match
+         if it is within this dist) TODO: set to some function of the 
+         simplify variable?
+ 
+  output: vector of ofPoints with z data filled in from the depth info
+ 
+  Finds closest texture coordinate to each point in the input mesh.
+  Adds the z data from the corresponding vertex into the input array
+ 
+  NOTE
+  before calling, make sure that renderer.caclulateTextureCoordinates 
+  is set to TRUE in the very beginning of the update loop.
+  Do this with a boolean flag, since it slows down the framerate a ton.
+ 
+  (might be something you want to precompute, since normally texture
+   mapping is done on the shader and is therefore very fast. This
+   is very slow)
+ *------------------------------------------------------------*/
+vector<ofPoint> testApp::get3DtextureCoordinates(vector<ofPoint> input, float acceptableDist){
+    
+    vector<ofVec3f> verts =  renderer.getMesh().getVertices();
+    vector<ofPoint> texs;
+    
+    texs.clear();
+    
+    for(ofVec3f v : verts){
+        v.normalize();
+        v.x = v.x +1; 
+        v.y = v.y + 1;
+        
+        v.x = v.x/2;
+        v.y = v.y/2;
+        
+        v.y = 1 - v.y;
+        v.x = 1 - v.x;
+        
+        
+    }
+    
+ /*   ofVec2f* texCoords =  renderer.getMesh().getTexCoordsPointer();
+    ofVec3f* verts =  renderer.getMesh().getVerticesPointer();
+    
+    for( ofPoint p : input){
+        float minDist = INTER_MAX;
+        int closestPointIndex;
+        for( int i = 0; i < renderer.getMesh().getTexCoords().size(); i++){
+            float dist = ofDist( (texCoords + i)->x, (texCoords + i)->y, p.x, p.y);
+            if(dist < minDist){
+                minDist = dist;
+                closestPointIndex = i; 
+            }
+            if(minDist < acceptableDist)
+                break;
+        }
+        p.z = (verts + closestPointIndex)->z;
+    }
+
+    return input;*/
+    
+}
+/*------------------------------------------------------------*
+ Update Feature Detection Mesh Images
+ 
+ fills the two ofImages used for generating the triangulized
+ feature detection mesh with the current video frame.
+ 
+ Feature Detection runs on the fDbwImg, and the colorImg is used
+ to determine the color of each triangle. Apply any image 
+ manipulations you want to apply to the ENTIRE img here.
+ 
+ (Its faster to tweak the color only on the reference pixel
+ in the drawFDMesh function)
+ *------------------------------------------------------------*/
+
+ 
+void testApp::updateFDMeshImages(){
+
+    //nonsense to convert current video frame to ofImage
+    ofPixels vidPix;
+    ofPixels vidPixLG;
+    
+    if(hasHiresVideo){
+        vidPixLG = hiResPlayer->getPixelsRef();
+    }
+    //else
+        vidPix = lowResPlayer->getPixelsRef();
+    
+    fDcolorImg.clear();
+    fDcolorImg = ofImage(vidPix);
+    
+    fDcolorImg.crop(fDcrop/2, 0, fDcolorImg.width-fDcrop/2, fDcolorImg.height);  
+    
+    //apply any image manipulation you want to apply to
+    //the entire image to improve feature detection here
+    //Only the b/w image gets passed to feature detection,
+    //so don't touch the color unless the transformation
+    //improves it anyway, e.g. a s curves layer
+    
+    fDbwImg = ofImage(fDcolorImg.getPixelsRef());
+    fDbwImg.setImageType(OF_IMAGE_GRAYSCALE);
+    
+}
+
+/*------------------------------------------------------------*
+ 
+    Update the Feature Detection Mesh itself.
+ 
+ 
+  *------------------------------------------------------------*/
+void testApp::updateFDMesh(){
+    
+    featurePoints.clear();
+    updateFDMeshImages();
+    
+    if(drawfDContour){
+        //reset contourFinder variables from the GUI
+        contourFinder.setMinAreaRadius(cFminRadius);
+        contourFinder.setMaxAreaRadius(cFmaxRadius);
+        contourFinder.setThreshold(cFthresh);
+        contourFinder.getTracker().setPersistence(15);
+        contourFinder.getTracker().setMaximumDistance(cFmaxDist);
+    
+        contourFinder.findContours(toCv(fDcolorImg));
+        triangle.clear();
+        
+      /*  for (int i=0; i<contourFinder.nBlobs; i++)
+        {
+            triangle.triangulate(contourFinder.blobs[i], max( 3.0f, (float)contourFinder.blobs[i].pts.size()/5));
+        }*/
+
+    }
+    
+    //pull new features from the current frames
+    featurePoints = featureDetect();
+    
+    //get z coordinate from the depth image
+    //   get3DtextureCoordinates(featurePoints, 2.0);
+    
+    //triangulate the found points using ofxDelauay
+    dTriangles.reset();
+    dTriangles.setMaxPoints(featureMax);
+    
+    for(ofPoint p: featurePoints){
+        dTriangles.addPoint(p);}
+    
+    dTriangles.triangulate();
+}
+
+/*------------------------------------------------------------*
+ Draw Feature Detection Mesh
+ 
+ input: boolean flag, if true, draws 3D mesh, false draws 2D mesh
+ 
+ draws the mesh triangulated from the feature detection
+*------------------------------------------------------------*/
+
+void testApp::drawFDMesh(bool draw3D){
+    ofPushStyle();
+    
+    if(drawfDContour){
+        contourFinder.draw();
+    }
+    else{
+        if(fillFDMeshTri){
+            for( int i=0; i<dTriangles.triangles.size(); i++ )
+            {
+                int colorIndex;
+                float centerX, centerY;
+                
+                ofxDelaunayTriangle& tri = dTriangles.triangles[ i ];
+                centerX = (tri.points[0].x + tri.points[1].x + tri.points[2].x)/3;
+                centerY = (tri.points[0].y + tri.points[1].y + tri.points[2].y)/3;
+                
+                // t.points[ 0 ].y * img.width + t.points[ 0 ].x]
+                ofFill();
+                ofColor c = fDcolorImg.getColor(centerX, centerY);
+                
+                //any color manipulation here
+                c.setSaturation(c.getSaturation() + fDimgSat);
+                ofSetColor(c);
+                
+                if(!draw3D){
+                    ofTriangle
+                    (
+                     tri.points[ 0 ].x,
+                     tri.points[ 0 ].y,
+                     tri.points[ 1 ].x,
+                     tri.points[ 1 ].y,
+                     tri.points[ 2 ].x,
+                     tri.points[ 2 ].y
+                     );
+                }
+                else {
+                    ofTriangle
+                    (
+                     tri.points[ 0 ].x,
+                     tri.points[ 0 ].y,
+                     tri.points[ 0 ].z,
+                     tri.points[ 1 ].x,
+                     tri.points[ 1 ].y,
+                     tri.points[ 1 ].z,
+                     tri.points[ 2 ].x,
+                     tri.points[ 2 ].y,
+                     tri.points[ 2 ].z
+                     );
+                    
+                }
+            }
+        }
+        else{
+            ofSetColor(255,0,0);
+            ofNoFill();
+            dTriangles.draw();
+            
+            //uncomment for points
+            /*  ofSetColor(0, 255, 255);
+             for(ofPoint p : featurePoints)
+             ofEllipse(p.x, p.y, 2, 2);*/
+        }
+    }
+    ofPopStyle();
 }
 
 void testApp::drawGeometry(){
@@ -354,7 +696,7 @@ void testApp::drawGeometry(){
         wireAlpha = 1.0;
         meshAlpha = 0.0;    
     }
-    
+
     //helps eliminate zfight by translating the mesh occluder slightly back from the camera
     ofVec3f camTranslateVec = cam.getLookAtDir();    
     ofRectangle renderFboRect = ofRectangle(0, 0, fbo1.getWidth(), fbo1.getHeight());
@@ -381,23 +723,7 @@ void testApp::drawGeometry(){
         
         renderedCameraPos.setPosition(cam.getPosition());
         renderedCameraPos.setOrientation(cam.getOrientationQuat());
-        /*
-         old alpha fade way not working
-        fbo.begin();
-        ofClear(0.0, 0.0, 0.0, 0.0);
-        ofEnableAlphaBlending();
-        alphaFadeShader.begin();
-        float decay = timeline.getKeyframeValue("Motion Trail Decay");
-        decay *= decay;
-        
-        alphaFadeShader.setUniform1f("fadeSpeed", decay);
-        backbuf.getTextureReference().draw(renderFboRect);
-        
-        alphaFadeShader.end();
-        
-        fbo.end();
-        */
-        
+   
         ofBlendMode blendMode = OF_BLENDMODE_SCREEN;
         
         //new way of doing trails that kills alpha backgrounds.
@@ -408,6 +734,7 @@ void testApp::drawGeometry(){
         decay *= decay; //exponential
         ofSetColor(0, 0, 0, decay*255);
         ofRect(renderFboRect);
+        
         ofPopStyle();
         fbo1.end();
 
@@ -435,6 +762,7 @@ void testApp::drawGeometry(){
             //ofEnableBlendMode(OF_BLENDMODE_ADD);
             ofSetColor(255, 255, 255, meshAlpha*255);
             swapFbo.getTextureReference().draw(renderFboRect);
+            
             ofPopStyle();
             
             fbo1.end();       
@@ -678,8 +1006,7 @@ void testApp::drawGeometry(){
             
             fbo1.end();
         }
-        
-        rendererDirty = false;
+
 	}
     
     ofPushStyle();
@@ -689,7 +1016,11 @@ void testApp::drawGeometry(){
     
     ofEnableAlphaBlending();
     fbo1.getTextureReference().draw(fboRectangle);
-      
+    
+
+    
+    rendererDirty = false;
+    
 }
 
 //************************************************************
@@ -774,6 +1105,9 @@ void testApp::keyPressed(int key){
     else if(key == '5'){
         gui.setPage(5);
     }
+    else if(key == '6'){
+        gui.setPage(6);
+    }
 
     if(key == '!'){
         timeline.setCurrentPage(0);
@@ -836,6 +1170,16 @@ void testApp::mouseReleased(int x, int y, int button){
 #pragma mark application logic
 //--------------------------------------------------------------
 void testApp::update(){
+    
+    //quick flag to generate texture coordinats if you plan on drawing
+    //the feature Mesh
+    
+    /**********************Flag off*****************************
+    if(featureDraw)
+        renderer.calculateTextureCoordinates = true;
+    else 
+        renderer.calculateTextureCoordinates = false;
+     */
 	
 	for(int i = 0; i < comps.size(); i++){
 		comps[i]->load->enabled    = viewComps || !allLoaded;
@@ -967,6 +1311,22 @@ void testApp::update(){
 		currentRenderFrame = timeline.getInFrame();
 	}
 	
+    
+    /*--------------------------------------------------------------*
+     update Video Players
+     
+     IF RENDERING
+      - update high res if available
+      - update low res if not
+     
+     ELSE
+      - update low res ALWAYS
+      - update high res if availabe
+      - IF [ no temporal alignment + new Frame || temporal alignment and depth frame != selected depth frame from timeline]
+            - updating renderer with low res data ALWAYS 
+            (never give it high res, even if available)
+     *--------------------------------------------------------------*/
+    
 	if(currentlyRendering){
 		//hiResPlayer->setFrame(currentRenderFrame % hiResPlayer->getTotalNumFrames());
 		timeline.setCurrentFrame(currentRenderFrame);
@@ -981,23 +1341,6 @@ void testApp::update(){
 			lowResPlayer->update();
             updateRenderer(*lowResPlayer);		            
         }
-		
-//		cout << "would have set hi res frame to " << currentRenderFrame % hiResPlayer->getTotalNumFrames() << endl;
-//		cout << "instead set it to " << hiResPlayer->getCurrentFrame() << endl;
-		
-		////////
-		//		char filename[512];
-		//		sprintf(filename, "%s/TEST_FRAME_%05d_%05d_A.png", saveFolder.c_str(), currentRenderFrame, hiResPlayer->getCurrentFrame());
-		//		savingImage.saveImage(filename);		
-		//		savingImage.setFromPixels(hiResPlayer->getPixelsRef());
-		//		savingImage.saveImage(filename);
-		//		
-		//		cout << "FRAME UPDATE" << endl;
-		//		cout << "	setting frame to " << currentRenderFrame << " actual frame is " << hiResPlayer->getCurrentFrame() << endl;
-		//		cout << "	set to percent " << 1.0*currentRenderFrame/hiResPlayer->getTotalNumFrames() << " actual percent " << hiResPlayer->getPosition() << endl;
-		////////
-		
-		
 	}
 	
 	if(!currentlyRendering){
@@ -1014,11 +1357,11 @@ void testApp::update(){
 		if(temporalAlignmentMode && (currentDepthFrame != depthSequence.getSelectedFrame())){
 			updateRenderer(*lowResPlayer);
 		}
-		
+    
+		//what is this?
 		if(sampleCamera){
 			cameraTrack.sample();
 		}
-				
 		if(captureFramePair && temporalAlignmentMode){
 			alignmentScrubber.registerCurrentAlignment();
 			alignmentScrubber.save();
@@ -1061,6 +1404,9 @@ void testApp::update(){
     	renderer.setSimplification(simplification);
     }
     
+    // if any variables are not current, update all of them, pass new 
+    // parameters into the renderer
+    
 	if(currentXMultiplyShift != renderer.xmult ||
 	   currentYMultiplyShift != renderer.ymult ||
 	   currentMirror != renderer.mirror ||
@@ -1088,6 +1434,11 @@ void testApp::update(){
 	if(!temporalAlignmentMode && !currentlyRendering && lowResPlayer->getSpeed() == 0.0 && videoTimelineElement.getSelectedFrame() != timeline.getCurrentFrame()){
 		videoTimelineElement.selectFrame(timeline.getCurrentFrame());
 	}	
+    
+    /*--- Update Feature Detect Mesh ---*/
+    if(featureDraw){
+        updateFDMesh();
+    }
 }
 
 
@@ -1172,16 +1523,37 @@ void testApp::draw(){
 
             drawGeometry();
             
-            colorAlignAssistRect = ofRectangle(fboRectangle.x + fboRectangle.width, fboRectangle.y, fboRectangle.width/3, fboRectangle.height/3);
+            colorAlignAssistRect = ofRectangle(fboRectangle.x + fboRectangle.width,
+                                               fboRectangle.y, fboRectangle.width/3,
+                                               fboRectangle.height/3);
             float ratio = colorAlignAssistRect.width / lowResPlayer->getWidth();
-            depthAlignAssistRect = ofRectangle(colorAlignAssistRect.x, colorAlignAssistRect.y+colorAlignAssistRect.height,
-                                               640 * ratio, 480 * ratio);            
+            depthAlignAssistRect = ofRectangle(colorAlignAssistRect.x, 
+                                               colorAlignAssistRect.y+colorAlignAssistRect.height,
+                                               640 * ratio, 480 * ratio);
+            vidAlignAssistRect = ofRectangle(colorAlignAssistRect.x - 200, 
+                                             colorAlignAssistRect.y + colorAlignAssistRect.height * 2 - 150,
+                                             lowResPlayer->getWidth(), lowResPlayer->getHeight());
+            
 			if(temporalAlignmentMode){
                 lowResPlayer->draw(colorAlignAssistRect);
 				depthSequence.currentDepthImage.draw(depthAlignAssistRect);
             }
-            else if(drawDOF){
-				dofBuffer.getTextureReference().draw(colorAlignAssistRect);
+            else {
+                if(drawDOF)
+                    dofBuffer.getTextureReference().draw(colorAlignAssistRect);
+                
+                /*--- Draw Feature Detection Mesh Small Vid ---*/
+                if(featureDraw){
+    
+                        lowResPlayer->draw(vidAlignAssistRect.x, vidAlignAssistRect.y);
+                        ofPushMatrix();
+                        ofTranslate(vidAlignAssistRect.x, vidAlignAssistRect.y);
+                        //if(hasHiresVideo)
+                         //   ofScale(0.333,0.3333);
+                        drawFDMesh(false);
+                        ofPopMatrix();
+                    
+                }
             }
             
 			if(currentlyRendering){
@@ -1191,8 +1563,6 @@ void testApp::draw(){
 				sprintf(filename, "%s/save_%05d.png", saveFolder.c_str(), currentRenderFrame);
 				savingImage.saveImage(filename);
 				
-				//cout << "at save time its set to " << hiResPlayer->getCurrentFrame() << endl;
-
 				///////frame debugging
 				//		numFramesRendered++;
 				//		cout << "	Rendered (" << numFramesRendered << "/" << numFramesToRender << ") +++ current render frame is " << currentRenderFrame << " quick time reports frame " << hiResPlayer->getCurrentFrame() << endl;
@@ -1208,10 +1578,6 @@ void testApp::draw(){
 					finishRender();
 				}
 			}
-			
-//			if(sampleCamera){
-//				ofDrawBitmapString("RECORDING CAMERA", ofPoint(600, 10));
-//			}
 		}
 		
 		gui.setDraw(!currentlyRendering && !presentMode);
@@ -1240,6 +1606,7 @@ void testApp::draw(){
 		}
 		ofPopStyle();
 	}
+
 }
 
 

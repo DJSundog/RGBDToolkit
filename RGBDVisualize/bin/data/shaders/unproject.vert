@@ -9,14 +9,11 @@ void main(void)
 	gl_Position = ftransform();
     gl_FrontColor = gl_Color;
     
-	mat4 tTex = gl_TextureMatrix[0]; //this is the identity matrix by default
-                                     //do you change this anywhere?
+	mat4 tTex = gl_TextureMatrix[0];
 	vec4 texCd = tTex * gl_Vertex;
-	texCd.xyz /= texCd.w; //the vector should be normalized here, 
-                          //but where did you get the valid .w
-                          //coordinate from?
+	texCd.xyz /= texCd.w; 
     
-    //this is self explanitory math we get and can reproduce
+ 
 	texCd.xy += 1.;
 	texCd.xy /= 2.;
 	texCd.y = 1. - texCd.y;

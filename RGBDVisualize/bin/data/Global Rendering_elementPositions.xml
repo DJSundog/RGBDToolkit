@@ -1,0 +1,26 @@
+<positions>
+    <element name="Edge Snip">
+        <x>0</x>
+        <y>1095</y>
+        <width>1920</width>
+        <height>75</height>
+    </element>
+    <element name="Motion Trail Decay">
+        <x>0</x>
+        <y>885</y>
+        <width>1920</width>
+        <height>75</height>
+    </element>
+    <element name="Simplify">
+        <x>0</x>
+        <y>990</y>
+        <width>1920</width>
+        <height>75</height>
+    </element>
+    <element name="Z Threshold">
+        <x>0</x>
+        <y>1200</y>
+        <width>1920</width>
+        <height>75</height>
+    </element>
+</positions>

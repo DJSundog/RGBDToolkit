@@ -1,0 +1,22 @@
+<controls>
+    <Toggle_Reset_Cam_Pos>
+        <name>Reset Cam Pos</name>
+        <value>0</value>
+    </Toggle_Reset_Cam_Pos>
+    <SliderFloat_Camera_Speed>
+        <name>Camera Speed</name>
+        <value>13.0675</value>
+    </SliderFloat_Camera_Speed>
+    <SliderFloat_Cam_Roll_Speed>
+        <name>Cam Roll Speed</name>
+        <value>0</value>
+    </SliderFloat_Cam_Roll_Speed>
+    <Toggle_Set_Camera_Point>
+        <name>Set Camera Point</name>
+        <value>0</value>
+    </Toggle_Set_Camera_Point>
+    <Toggle_Lock_to_Track>
+        <name>Lock to Track</name>
+        <value>0</value>
+    </Toggle_Lock_to_Track>
+</controls>

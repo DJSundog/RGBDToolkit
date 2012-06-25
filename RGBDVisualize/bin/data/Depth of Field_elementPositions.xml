@@ -1,0 +1,20 @@
+<positions>
+    <element name="DOF Blur">
+        <x>0</x>
+        <y>1095</y>
+        <width>1920</width>
+        <height>75</height>
+    </element>
+    <element name="DOF Distance">
+        <x>0</x>
+        <y>885</y>
+        <width>1920</width>
+        <height>75</height>
+    </element>
+    <element name="DOF Range">
+        <x>0</x>
+        <y>990</y>
+        <width>1920</width>
+        <height>75</height>
+    </element>
+</positions>

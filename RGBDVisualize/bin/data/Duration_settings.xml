@@ -1,0 +1,26 @@
+<controls>
+    <SliderInt_Duration>
+        <name>Duration</name>
+        <value>17856</value>
+    </SliderInt_Duration>
+    <Toggle_Set_Duration>
+        <name>Set Duration</name>
+        <value>0</value>
+    </Toggle_Set_Duration>
+    <Toggle_Reset_Duration_to_Clip>
+        <name>Reset Duration to Clip</name>
+        <value>0</value>
+    </Toggle_Reset_Duration_to_Clip>
+    <Toggle_Video_In/Out>
+        <name>Video In/Out</name>
+        <value>0</value>
+    </Toggle_Video_In/Out>
+    <SliderFloat_Video_In>
+        <name>Video In</name>
+        <value>0</value>
+    </SliderFloat_Video_In>
+    <SliderFloat_Video_Out>
+        <name>Video Out</name>
+        <value>1</value>
+    </SliderFloat_Video_Out>
+</controls>

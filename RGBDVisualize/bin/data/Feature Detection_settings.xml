@@ -1,0 +1,50 @@
+<controls>
+    <Toggle_Draw_Abstrated_Mesh>
+        <name>Draw Abstrated Mesh</name>
+        <value>1</value>
+    </Toggle_Draw_Abstrated_Mesh>
+    <Toggle_Hide_Triangulization>
+        <name>Hide Triangulization</name>
+        <value>1</value>
+    </Toggle_Hide_Triangulization>
+    <Toggle_Draw_Contour_Finder>
+        <name>Draw Contour Finder</name>
+        <value>0</value>
+    </Toggle_Draw_Contour_Finder>
+    <SliderInt_maxFeatures>
+        <name>maxFeatures</name>
+        <value>500</value>
+    </SliderInt_maxFeatures>
+    <SliderFloat_qualityLevel>
+        <name>qualityLevel</name>
+        <value>0.001</value>
+    </SliderFloat_qualityLevel>
+    <SliderInt_Minimum_Point_Distance>
+        <name>Minimum Point Distance</name>
+        <value>3</value>
+    </SliderInt_Minimum_Point_Distance>
+    <SliderFloat_Color_Saturation>
+        <name>Color Saturation</name>
+        <value>12</value>
+    </SliderFloat_Color_Saturation>
+    <SliderInt_Crop>
+        <name>Crop</name>
+        <value>0</value>
+    </SliderInt_Crop>
+    <SliderInt_Contour_Finder_min_Object_Radius>
+        <name>Contour Finder min Object Radius</name>
+        <value>53</value>
+    </SliderInt_Contour_Finder_min_Object_Radius>
+    <SliderInt_Contour_Finder_max_Object_Radius>
+        <name>Contour Finder max Object Radius</name>
+        <value>944</value>
+    </SliderInt_Contour_Finder_max_Object_Radius>
+    <SliderInt_Contour_Finder_threshold>
+        <name>Contour Finder threshold</name>
+        <value>59</value>
+    </SliderInt_Contour_Finder_threshold>
+    <SliderInt_Contour_Finder_max_Distance>
+        <name>Contour Finder max Distance</name>
+        <value>72</value>
+    </SliderInt_Contour_Finder_max_Distance>
+</controls>

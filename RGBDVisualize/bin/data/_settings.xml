@@ -1,0 +1,34 @@
+<controls>
+    <Toggle_Pause_Render>
+        <name>Pause Render</name>
+        <value>0</value>
+    </Toggle_Pause_Render>
+    <Toggle_Draw_Pointcloud>
+        <name>Draw Pointcloud</name>
+        <value>0</value>
+    </Toggle_Draw_Pointcloud>
+    <Toggle_Draw_Wireframe>
+        <name>Draw Wireframe</name>
+        <value>1</value>
+    </Toggle_Draw_Wireframe>
+    <Toggle_Draw_Mesh>
+        <name>Draw Mesh</name>
+        <value>0</value>
+    </Toggle_Draw_Mesh>
+    <Toggle_Depth_Distortion>
+        <name>Depth Distortion</name>
+        <value>0</value>
+    </Toggle_Depth_Distortion>
+    <Toggle_Geometry_Distortion>
+        <name>Geometry Distortion</name>
+        <value>0</value>
+    </Toggle_Geometry_Distortion>
+    <Toggle_Self_Occlude>
+        <name>Self Occlude</name>
+        <value>0</value>
+    </Toggle_Self_Occlude>
+    <Toggle_Draw_DOF>
+        <name>Draw DOF</name>
+        <value>1</value>
+    </Toggle_Draw_DOF>
+</controls>

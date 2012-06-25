@@ -1,0 +1,14 @@
+<controls>
+    <Toggle_View_Comps>
+        <name>View Comps</name>
+        <value>0</value>
+    </Toggle_View_Comps>
+    <Toggle_Render_Batch>
+        <name>Render Batch</name>
+        <value>0</value>
+    </Toggle_Render_Batch>
+    <Toggle_Export_Settings>
+        <name>Export Settings</name>
+        <value>0</value>
+    </Toggle_Export_Settings>
+</controls>

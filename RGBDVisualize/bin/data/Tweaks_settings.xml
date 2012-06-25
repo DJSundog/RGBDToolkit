@@ -1,0 +1,34 @@
+<controls>
+    <Toggle_Mirror>
+        <name>Mirror</name>
+        <value>0</value>
+    </Toggle_Mirror>
+    <SliderFloat_X_Multiply_Shift>
+        <name>X Multiply Shift</name>
+        <value>0.00749999</value>
+    </SliderFloat_X_Multiply_Shift>
+    <SliderFloat_Y_Multiply_Shift>
+        <name>Y Multiply Shift</name>
+        <value>0.033</value>
+    </SliderFloat_Y_Multiply_Shift>
+    <Toggle_Fill_Holes>
+        <name>Fill Holes</name>
+        <value>1</value>
+    </Toggle_Fill_Holes>
+    <SliderInt_Hole_Kernel_Size>
+        <name>Hole Kernel Size</name>
+        <value>5</value>
+    </SliderInt_Hole_Kernel_Size>
+    <SliderInt_Hole_Fill_Iterations>
+        <name>Hole Fill Iterations</name>
+        <value>6</value>
+    </SliderInt_Hole_Fill_Iterations>
+    <Toggle_TemporalAlignmentMode>
+        <name>TemporalAlignmentMode</name>
+        <value>0</value>
+    </Toggle_TemporalAlignmentMode>
+    <Toggle_Capture_Frame_Pair>
+        <name>Capture Frame Pair</name>
+        <value>0</value>
+    </Toggle_Capture_Frame_Pair>
+</controls>

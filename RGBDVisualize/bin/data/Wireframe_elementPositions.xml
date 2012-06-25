@@ -1,0 +1,14 @@
+<positions>
+    <element name="Wireframe Alpha">
+        <x>0</x>
+        <y>885</y>
+        <width>1920</width>
+        <height>75</height>
+    </element>
+    <element name="Wireframe Thickness">
+        <x>0</x>
+        <y>990</y>
+        <width>1920</width>
+        <height>75</height>
+    </element>
+</positions>

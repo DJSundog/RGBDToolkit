@@ -1,0 +1,26 @@
+<positions>
+    <element name="Mesh Alpha">
+        <x>0</x>
+        <y>885</y>
+        <width>1920</width>
+        <height>75</height>
+    </element>
+    <element name="X Rotate">
+        <x>0</x>
+        <y>990</y>
+        <width>1920</width>
+        <height>75</height>
+    </element>
+    <element name="Y Rotate">
+        <x>0</x>
+        <y>1095</y>
+        <width>1920</width>
+        <height>75</height>
+    </element>
+    <element name="Z Rotate">
+        <x>0</x>
+        <y>1200</y>
+        <width>1920</width>
+        <height>75</height>
+    </element>
+</positions>

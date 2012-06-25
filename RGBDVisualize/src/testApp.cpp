@@ -73,11 +73,9 @@ void testApp::setup(){
 	shouldExportSettings = false;
     rendererDirty = true;
     
-<<<<<<< HEAD
+
     drawFaceTracker = false;
 
-=======
->>>>>>> origin/master
     /*----------------------------------*
      Feature Detection Variables 
      

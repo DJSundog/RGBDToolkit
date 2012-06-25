@@ -334,13 +334,10 @@ void testApp::populateTimelineElements(){
 
 #pragma mark customization
 
-<<<<<<< HEAD
-
 //The funciton below manipulates the raw kinect depth images,
 //for example, if you increase noise in the timeline
 //--------------------------------------------------------------
-=======
->>>>>>> origin/master
+
 /*------------------------------------------------------------*
  ProcessDepthFrame
  
@@ -350,10 +347,7 @@ void testApp::populateTimelineElements(){
  currently only being used to add noise to the connect data
  
  *------------------------------------------------------------*/
-<<<<<<< HEAD
->>>>>>> .merge_file_VNXNmt
-=======
->>>>>>> origin/master
+
 void testApp::processDepthFrame(){
 	
     if(!drawDepthDistortion) return;
@@ -1031,10 +1025,8 @@ void testApp::drawGeometry(){
             fbo1.end();
         }
 
-<<<<<<< HEAD
+
         rendererDirty = false;
-=======
->>>>>>> origin/master
 	}
     
     ofPushStyle();
@@ -1199,18 +1191,6 @@ void testApp::mouseReleased(int x, int y, int button){
 //--------------------------------------------------------------
 void testApp::update(){
     
-<<<<<<< HEAD
-=======
-    //quick flag to generate texture coordinats if you plan on drawing
-    //the feature Mesh
-    
-    /**********************Flag off*****************************
-    if(featureDraw)
-        renderer.calculateTextureCoordinates = true;
-    else 
-        renderer.calculateTextureCoordinates = false;
-     */
->>>>>>> origin/master
 	
 	for(int i = 0; i < comps.size(); i++){
 		comps[i]->load->enabled    = viewComps || !allLoaded;
@@ -1467,7 +1447,6 @@ void testApp::update(){
 	if(!temporalAlignmentMode && !currentlyRendering && lowResPlayer->getSpeed() == 0.0 && videoTimelineElement.getSelectedFrame() != timeline.getCurrentFrame()){
 		videoTimelineElement.selectFrame(timeline.getCurrentFrame());
 	}	
-<<<<<<< HEAD
 
     //This section updates the faceTracker if the texture source has updated, and records the face tracker
     //features so that they can be pulled from an XML file to avoid computational overhead in the future.
@@ -1476,7 +1455,6 @@ void testApp::update(){
     
     if(lowResPlayer->isFrameNew() && drawFaceTracker){
         
-        //if(
         faceTracker.update(toCv(*lowResPlayer));
            
         //facePosition = faceTracker.getPosition();
@@ -1491,13 +1469,11 @@ void testApp::update(){
         updateFDMesh();
     }
 
-=======
     
     /*--- Update Feature Detect Mesh ---*/
     if(featureDraw){
         updateFDMesh();
     }
->>>>>>> origin/master
 }
 
 
@@ -1633,22 +1609,16 @@ void testApp::draw(){
             depthAlignAssistRect = ofRectangle(colorAlignAssistRect.x, 
                                                colorAlignAssistRect.y+colorAlignAssistRect.height,
                                                640 * ratio, 480 * ratio);
-<<<<<<< HEAD
+
             vidAlignAssistRect = ofRectangle(colorAlignAssistRect.x, colorAlignAssistRect.y + 
                                              colorAlignAssistRect.height * 2 - 50, lowResPlayer->getWidth(), 
                                              lowResPlayer->getHeight());
-=======
-            vidAlignAssistRect = ofRectangle(colorAlignAssistRect.x - 200, 
-                                             colorAlignAssistRect.y + colorAlignAssistRect.height * 2 - 150,
-                                             lowResPlayer->getWidth(), lowResPlayer->getHeight());
->>>>>>> origin/master
+     
             
 			if(temporalAlignmentMode){
                 lowResPlayer->draw(colorAlignAssistRect);
 				depthSequence.currentDepthImage.draw(depthAlignAssistRect);
             }
-<<<<<<< HEAD
-<<<<<<< .merge_file_SLSDl8
             else{
                 if(drawDOF){
                     dofBuffer.getTextureReference().draw(colorAlignAssistRect);
@@ -1674,14 +1644,6 @@ void testApp::draw(){
                 }
                 /*--- Draw Feature Detection Mesh Small Vid ---*/
                 else if(featureDraw){
-=======
-            else {
-                if(drawDOF)
-                    dofBuffer.getTextureReference().draw(colorAlignAssistRect);
-                
-                /*--- Draw Feature Detection Mesh Small Vid ---*/
-                if(featureDraw){
->>>>>>> origin/master
     
                         lowResPlayer->draw(vidAlignAssistRect.x, vidAlignAssistRect.y);
                         ofPushMatrix();

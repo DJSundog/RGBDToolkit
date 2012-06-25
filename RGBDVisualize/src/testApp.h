@@ -10,10 +10,22 @@
 #include "ofxTLVideoDepthAlignmentScrubber.h"
 #include "ofxTLDepthImageSequence.h"
 #include "ofxMSAInteractiveObjectDelegate.h"
+#include "ofxSimpleGuiToo.h"
 #include "ofxTLCameraTrack.h"
 #include "ofxDepthHoleFiller.h"
-#include "ofxRGBDScene.h"
-#include "ofxGui.h"
+#include "ofxRGBDRenderSettings.h"
+#include "ofxFaceTracker.h"
+#include "ofxCv.h"
+
+#include "ofxDelaunay.h"
+#include "ofxTriangle.h"
+#include "ofxOpenCv.h"
+#include <iostream>
+
+#include "ofxDelaunay.h"
+#include "ofxTriangle.h"
+#include "ofxOpenCv.h"
+#include <iostream>
 
 #include "ofxDelaunay.h"
 #include "ofxTriangle.h"
@@ -21,24 +33,13 @@
 #include <iostream>
 
 typedef struct {
-	ofxRGBDScene scene;
-    ofxMSAInteractiveObjectWithDelegate* button;
-} SceneButton;
-
-typedef struct {
-    string compositionFolder;
-    ofxMSAInteractiveObjectWithDelegate* toggle;
-    ofxMSAInteractiveObjectWithDelegate* load;
-    bool inRenderQueue;
-} CompButton;
-
-typedef struct {
-    SceneButton* sceneButton;
-    bool completed;
-    string compositionFolder;
-    string compShortName;
-    ofxMSAInteractiveObjectWithDelegate* remove;
-} RenderButton;
+	ofxMSAInteractiveObjectWithDelegate* load;
+	ofxMSAInteractiveObjectWithDelegate* toggle;
+	string fullCompPath;
+	bool batchExport;
+	bool wasRenderedInBatch;
+	string name;
+} Comp;
 
 class testApp : public ofBaseApp, public ofxMSAInteractiveObjectDelegate {
 
@@ -62,7 +63,7 @@ class testApp : public ofBaseApp, public ofxMSAInteractiveObjectDelegate {
 	void processGeometry();
 	void drawGeometry();
 	
-	bool createNewComposition();
+	bool loadNewProject();
 	bool loadDepthSequence(string path);
 	bool loadVideoFile(string hiResPath, string lowResPath); //hires can be ""
 	bool loadAlignmentMatrices(string path);
@@ -70,86 +71,43 @@ class testApp : public ofBaseApp, public ofxMSAInteractiveObjectDelegate {
     void loadShaders();
     
 	ofxXmlSettings projectsettings;
-	void loadNewMediaBin();
-	void populateScenes();
-    void populateCompositionsForScene();
-    void populateRenderQueue();
     
+    ofxXmlSettings faceTrackerData;
+    bool faceFilePresent;
+    void populatePointsFile(ofxXmlSettings pointsFile, ofVideoPlayer player);
+
+	void loadCompositions();
 	void newComposition();
-    void loadDefaults();
 	void saveComposition();
-	bool loadComposition(string compositionDirectory);
-	bool loadAssetsForScene(SceneButton* scene);
-    void resetCameraPosition();
-    	
-    ofxPanel gui;
-    ofxToggle pauseRender;
-    ofxToggle drawPointcloud;
-    ofxToggle drawWireframe;
-    ofxToggle drawMesh;
-    ofxToggle drawDepthDistortion;
-    ofxToggle drawGeometryDistortion;
-    ofxToggle selfOcclude;
-    ofxToggle drawDOF;
-    
-    ofxButton shouldResetCamera;
-    ofxFloatSlider cameraSpeed;
-    ofxFloatSlider cameraRollSpeed;
-    ofxButton shouldSaveCameraPoint;
-    ofxToggle currentLockCamera; 
-    
-    ofxButton shouldResetDuration;
-    ofxButton setDurationToClipLength;
-    ofxToggle enableVideoInOut;
-    ofxFloatSlider videoInPercent;
-    ofxFloatSlider videoOutPercent;
-    
-    ofxToggle currentMirror;
-	ofxFloatSlider currentXMultiplyShift;
-    ofxFloatSlider currentYMultiplyShift;
-    ofxToggle undistortImages;
-    ofxToggle fillHoles;
-    ofxIntSlider currentHoleKernelSize;
-    ofxIntSlider currentHoleFillIterations;
-    ofxToggle temporalAlignmentMode;
-    ofxButton captureFramePair;
-
-    bool startRenderMode;
-
+	bool loadCompositionAtIndex(int i);
+	bool loadAssetsFromCompositionDirectory(string mediaPath);
+	void refreshCompButtons();
+	
 	//MSA Object delegate
-    ofxMSAInteractiveObjectWithDelegate* mediaBinButton;
-    ofxMSAInteractiveObjectWithDelegate* changeCompButton;
 	ofxMSAInteractiveObjectWithDelegate* newCompButton;
-	ofxMSAInteractiveObjectWithDelegate* saveCompButton;
-    ofxMSAInteractiveObjectWithDelegate* saveCompAsNewButton;
-    ofxMSAInteractiveObjectWithDelegate* renderBatch;
-    
-    void setButtonColors(ofxMSAInteractiveObjectWithDelegate* btn);
-    
-    vector<SceneButton> scenes;
-    vector<CompButton> comps;
-    vector<RenderButton> renderQueue;
-    
-	SceneButton* selectedScene;
-    CompButton* selectedComp;
-    SceneButton* loadedScene;
-    
+	ofxMSAInteractiveObjectWithDelegate* saveCompButton;	
+	vector<Comp*> comps;
+	
+	bool playerElementAdded;
+	
  	void objectDidRollOver(ofxMSAInteractiveObject* object, int x, int y);
     void objectDidRollOut(ofxMSAInteractiveObject* object, int x, int y);
 	void objectDidPress(ofxMSAInteractiveObject* object, int x, int y, int button);	
 	void objectDidRelease(ofxMSAInteractiveObject* object, int x, int y, int button);	
 	void objectDidMouseMove(ofxMSAInteractiveObject* object, int x, int y);
-    
-    bool isSceneLoaded;
-    
-	void populateTimelineElements();
-	bool playerElementAdded;
-	int renderQueueIndexToRemove;
 	
-	void addCompToRenderQueue(CompButton* comp);
 	void finishRender();
+	void toggleCameraPlayback();
+	
+	void populateTimelineElements();
+	void loadTimelineFromCurrentComp();
+	
+	void startCameraRecord();
+	void stopCameraRecord();
+	void toggleCameraRecord();
     
-    string currentCompShortName;
+    void updateFaceTrackerMesh(ofxFaceTracker fTracker, ofMesh* faceMesh, ofMesh rendererMesh);
+	
     /*----------------------------------*
      Alex's feature detection mesh
      *----------------------------------*/
@@ -192,35 +150,52 @@ class testApp : public ofBaseApp, public ofxMSAInteractiveObjectDelegate {
     
     /*----------------------------------*/
     
+	int currentCompIndex;
 	string currentCompositionDirectory;
-    string currentCompositionLabel;
-	string mediaBinFolder;
+	string mediaBinDirectory;
+	string pairingsFile;
 	ofVideoPlayer* hiResPlayer;
 	ofVideoPlayer* lowResPlayer;
-	bool hasHiresVideo;
-
+		
+    bool pauseRender;
+	bool temporalAlignmentMode;
+	bool captureFramePair;
 	long currentDepthFrame;
-    bool viewComps;
+	bool viewComps;
+	bool shouldExportSettings;
     
+	unsigned short* depthPixelDecodeBuffer;
+//	ofShortPixels holeFilledPixels;
+	
+	bool allLoaded;
     float accumulatedPerlinOffset;
     
 	ofxGameCamera cam;
 	ofxTLCameraTrack cameraTrack;
 	bool sampleCamera;
-    
-	ofxRGBDRenderer renderer;	
+	ofxRGBDRenderer renderer;
+	
 	ofxTimeline timeline;
 	ofxTLVideoPlayer videoTimelineElement;
 	ofxTLDepthImageSequence depthSequence;
 	ofxTLVideoDepthAlignmentScrubber alignmentScrubber;
 	ofxDepthHoleFiller holeFiller;
-	
+	ofxRGBDRenderSettings settingsExporter;
+	ofxFaceTracker faceTracker;
+
+    ofMesh faceTrackerMesh;
+    ofVec2f facePosition;
+	float faceScale;
+	ofVec3f faceOrientation;
+	ofMatrix4x4 faceRotationMatrix;
+    
 	ofRectangle fboRectangle;
     
     ofFbo swapFbo; //used for temp drawing
 	ofFbo fbo1;
     ofFbo fbo2;
     ofFbo dofBuffer;
+    //ofFbo vidBuffer;
     ofFbo dofBlurBuffer;
     int curbuf;
     
@@ -230,8 +205,53 @@ class testApp : public ofBaseApp, public ofxMSAInteractiveObjectDelegate {
     
 	ofImage savingImage;
 	string saveFolder;
-	string lastSavedDate;    
+	string lastSavedDate;
 
+	float currentXMultiplyShift;
+	float currentYMultiplyShift;
+//	float currentXAdditiveShift;
+//	float currentYAdditiveShift;
+//	float currentXScale;
+//	float currentYScale;
+//	float currentRotationCompensation;
+//	float currentZFuzz;
+	
+    bool drawFaceTracker;
+    //bool drawVideo;
+    
+    bool selfOcclude;
+	bool currentLockCamera;
+	
+	bool shouldResetDuration;
+    bool setDurationToClipLength;
+	int currentDuration;
+	
+	bool currentMirror;
+	bool presentMode;
+	
+	bool shouldSaveCameraPoint;
+	bool shouldClearCameraMoves;
+	bool shouldResetCamera;
+	
+	bool enableVideoInOut;
+	float videoInPercent;
+	float videoOutPercent;
+	
+	bool drawPointcloud;
+	bool drawWireframe;
+	bool drawMesh;
+	bool drawDepthDistortion;
+	bool drawGeometryDistortion;
+    
+	int currentSimplify;
+	
+	bool fillHoles;
+	int currentHoleKernelSize;
+	int currentHoleFillIterations;
+	
+	bool hasHiresVideo;
+	
+	bool startRenderMode;
 	bool currentlyRendering;
 	int currentRenderFrame;
 	int lastRenderFrame;
@@ -240,11 +260,20 @@ class testApp : public ofBaseApp, public ofxMSAInteractiveObjectDelegate {
 	bool rendererDirty;
     ofNode renderedCameraPos;
     
+	ofImage testImageOne;
+	ofImage testImageTwo;
+	
+	ofVec3f lightpos;
+	ofLight light;
+
 	string pathDelim;
     
+    bool drawDOF;
     ofShader DOFCloud;
     ofShader alphaFadeShader;
     ofShader gaussianBlur;
     ofShader dofRange;
     ofShader dofBlur;
+    
+
 };
